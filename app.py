@@ -58,7 +58,7 @@ def generate_image_caption(image_data):
 app = Flask(__name__)
 
 # AWS S3 Configuration, REPLACE with your S3 bucket
-S3_BUCKET = "myimagebucket "
+S3_BUCKET = "myimagebucket"
 S3_REGION = "us-east-1"
 DB_HOST = "imagedatabase.cnwyqwsus01i.us-east-1.rds.amazonaws.com"
 DB_NAME = "imagedatabase"
