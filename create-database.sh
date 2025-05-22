@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # RDS connection details
-DB_HOST="database-1.cnwyqwsus01i.us-east-1.rds.amazonaws.com"           # Replace with your RDS endpoint
-DB_USER="admin"           # Your RDS admin username
-DB_PASSWORD="lab-password"       # Your RDS password
+DB_HOST=""           # Replace with your RDS endpoint
+DB_USER=""           # Your RDS admin username
+DB_PASSWORD=""       # Your RDS password
 SQL_COMMANDS=$(cat <<EOF
 /*
   Database Creation Script for the Image Captioning App
@@ -18,6 +18,7 @@ CREATE TABLE captions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     image_key VARCHAR(255) NOT NULL,
     caption TEXT NOT NULL,
+    thumbnail_key VARCHAR(255),
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 EOF

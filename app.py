@@ -29,7 +29,7 @@ import base64  # Encoding image data for API processing
 from io import BytesIO  # Handling in-memory file objects
 
 # Configure Gemini API, REPLACE with your Gemini API key
-GOOGLE_API_KEY = "AlzaSyA7Vm8BxclVclcErEt8xoqkeRC-qxxx9yxc"
+GOOGLE_API_KEY = ""
 genai.configure(api_key=GOOGLE_API_KEY)
 
 # Choose a Gemini model for generating captions
@@ -58,7 +58,7 @@ def generate_image_caption(image_data):
 app = Flask(__name__)
 
 # AWS S3 Configuration, REPLACE with your S3 bucket
-S3_BUCKET = "image-bucket-sluo0196"
+S3_BUCKET = ""
 S3_REGION = "us-east-1"
 
 
@@ -67,10 +67,10 @@ def get_s3_client():
     return boto3.client("s3", region_name=S3_REGION)
 
 # Database Configuration, REPLACE with your RDS credentials
-DB_HOST = "database-1.cnwyqwsus01i.us-east-1.rds.amazonaws.com"
+DB_HOST = ""
 DB_NAME = "image_caption_db"
-DB_USER = "admin"
-DB_PASSWORD = "lab-password"
+DB_USER = ""
+DB_PASSWORD = ""
 
 def get_db_connection():
     """
@@ -133,7 +133,8 @@ def upload_image():
             return render_template("upload.html", error=f"S3 Upload Error: {str(e)}")
 
         # Generate caption
-        caption = generate_image_caption(file_data)
+        caption = None  
+
 
         # Save metadata to the database
         try:
@@ -142,9 +143,10 @@ def upload_image():
                 return render_template("upload.html", error="Database Error: Unable to connect to the database.")
             cursor = connection.cursor()
             cursor.execute(
-                "INSERT INTO captions (image_key, caption) VALUES (%s, %s)",
-                (filename, caption),
+                "INSERT INTO captions (image_key, caption, thumbnail_key) VALUES (%s, %s, %s)",
+                (filename, caption, None)
             )
+
             connection.commit()
             connection.close()
         except Exception as e:
@@ -173,17 +175,19 @@ def gallery():
         results = cursor.fetchall()
         connection.close()
 
+        
         images_with_captions = [
             {
                 "url": get_s3_client().generate_presigned_url(
                     "get_object",
-                    Params={"Bucket": S3_BUCKET, "Key": row["image_key"]},
-                    ExpiresIn=3600,  # URL expires in 1 hour
+                    Params={"Bucket": S3_BUCKET,"Key": row["thumbnail_key"] if row["thumbnail_key"] else row["image_key"]},
+                    ExpiresIn=3600,
                 ),
-                "caption": row["caption"],
+                "caption": row["caption"] or "Caption pending..."
             }
             for row in results
         ]
+
 
         return render_template("gallery.html", images=images_with_captions)
 
