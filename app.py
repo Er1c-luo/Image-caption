@@ -58,10 +58,10 @@ def generate_image_caption(image_data):
 app = Flask(__name__)
 
 # AWS S3 Configuration, REPLACE with your S3 bucket
-S3_BUCKET = "myimagebucket"
+S3_BUCKET = "myiamgebucket"
 S3_REGION = "us-east-1"
 DB_HOST = "imagedatabase.cnwyqwsus01i.us-east-1.rds.amazonaws.com"
-DB_NAME = "imagedatabase"
+DB_NAME = "image_caption_db"
 DB_USER = "admin"
 DB_PASSWORD = "labpassword"
 
@@ -78,6 +78,7 @@ def get_db_connection():
 
     :return: Database connection object or None if connection fails
     """
+    print(f'{DB_HOST}, {DB_NAME}, {DB_USER}')
     try:
         connection = mysql.connector.connect(
             host=DB_HOST, database=DB_NAME, user=DB_USER, password=DB_PASSWORD
@@ -128,8 +129,11 @@ def upload_image():
         # Upload file to S3
         try:
             s3 = get_s3_client()  # Get a fresh S3 client
+            print(f"🟡 Uploading '{filename}' to bucket '{S3_BUCKET}'...")
             s3.upload_fileobj(BytesIO(file_data), S3_BUCKET, filename)
+            print(f"✅ Upload successful for: {filename}")
         except Exception as e:
+            print(f"❌ S3 Upload Error: {str(e)}")
             return render_template("upload.html", error=f"S3 Upload Error: {str(e)}")
 
         # Generate caption
@@ -192,3 +196,4 @@ def gallery():
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
+    
