@@ -129,11 +129,8 @@ def upload_image():
         # Upload file to S3
         try:
             s3 = get_s3_client()  # Get a fresh S3 client
-            print(f"🟡 Uploading '{filename}' to bucket '{S3_BUCKET}'...")
             s3.upload_fileobj(BytesIO(file_data), S3_BUCKET, filename)
-            print(f"✅ Upload successful for: {filename}")
         except Exception as e:
-            print(f"❌ S3 Upload Error: {str(e)}")
             return render_template("upload.html", error=f"S3 Upload Error: {str(e)}")
 
         # Generate caption
