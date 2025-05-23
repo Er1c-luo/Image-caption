@@ -111,34 +111,38 @@ def upload_image():
 @app.route("/gallery")
 def gallery():
     try:
-        connection = get_db_connection()
-        if not connection:
-            return render_template("gallery.html", error="Database error")
-            
-        cursor = connection.cursor(dictionary=True)
-        cursor.execute("""
-            SELECT filename, description, created_at 
-            FROM images 
-            ORDER BY created_at DESC
-        """)
-        images = cursor.fetchall()
-        connection.close()
-        
-        # 为每个图像生成缩略图URL
-        s3 = get_s3_client()
-        for img in images:
-            img["thumb_url"] = s3.generate_presigned_url(
+        conn = get_db_connection()
+        if conn is None:
+            raise Exception("Database connection failed")
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT image_key, caption FROM captions ORDER BY uploaded_at DESC")
+        rows = cursor.fetchall()
+        conn.close()
+
+        images = []
+        for row in rows:
+            image_url = get_s3_client().generate_presigned_url(
                 "get_object",
-                Params={
-                    "Bucket": S3_BUCKET,
-                    "Key": f"thumbs/{img['filename']}"
-                },
-                ExpiresIn=3600
+                Params={"Bucket": S3_BUCKET, "Key": row["image_key"]},
+                ExpiresIn=3600,
             )
-            
+            thumbnail_key = f"thumbnails/{row['image_key']}"
+            thumbnail_url = get_s3_client().generate_presigned_url(
+                "get_object",
+                Params={"Bucket": S3_BUCKET, "Key": thumbnail_key},
+                ExpiresIn=3600,
+            )
+            images.append({
+                "image_url": image_url,
+                "thumbnail_url": thumbnail_url,
+                "caption": row["caption"] or "[Pending annotation...]"
+            })
+
         return render_template("gallery.html", images=images)
-        
+
     except Exception as e:
-        return render_template("gallery.html", error=str(e))
+        print("Gallery Load Error:", e)
+        return render_template("gallery.html", error=f"Gallery Error: {str(e)}")
+
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
