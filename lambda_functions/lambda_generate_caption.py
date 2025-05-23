@@ -1,45 +1,73 @@
-import json
 import boto3
 import pymysql
 import base64
+import os
 import google.generativeai as genai
 
-# Gemini API 配置
-genai.configure(api_key="YOUR_GEMINI_API_KEY")
+# 环境变量读取
+DB_HOST = os.environ['DB_HOST']
+DB_NAME = os.environ['DB_NAME']
+DB_USER = os.environ['DB_USER']
+DB_PASSWORD = os.environ['DB_PASSWORD']
+S3_BUCKET = os.environ['S3_BUCKET']
+GOOGLE_API_KEY = os.environ['GOOGLE_API_KEY']
+
+# Gemini 初始化
+genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel(model_name="gemini-2.0-pro-exp-02-05")
 
-# RDS 数据库配置（替换成你的真实值）
-DB_HOST = "your-db-endpoint"
-DB_USER = "your-db-user"
-DB_PASSWORD = "your-db-password"
-DB_NAME = "image_caption_db"
+def generate_caption(image_bytes):
+    try:
+        encoded = base64.b64encode(image_bytes).decode("utf-8")
+        response = model.generate_content(
+            [
+                {"mime_type": "image/jpeg", "data": encoded},
+                "Generate a short caption for this image"
+            ]
+        )
+        return response.text or "[Empty]"
+    except Exception as e:
+        print(f"Gemini error: {e}")
+        return "[Caption failed]"
 
 def lambda_handler(event, context):
+    print("Event:", event)
+
     s3 = boto3.client('s3')
-    
-    # 获取 S3 信息
-    bucket = event['Records'][0]['s3']['bucket']['name']
-    key = event['Records'][0]['s3']['object']['key']
+    record = event['Records'][0]
+    key = record['s3']['object']['key']
 
-    # 跳过 thumbnails 文件夹
-    if key.startswith("thumbnails/"):
-        return {"status": "skipped"}
+    try:
+        # 下载图片
+        response = s3.get_object(Bucket=S3_BUCKET, Key=key)
+        image_bytes = response['Body'].read()
 
-    # 下载图片数据
-    response = s3.get_object(Bucket=bucket, Key=key)
-    image_data = response['Body'].read()
+        # 生成 caption
+        caption = generate_caption(image_bytes)
+        print(f"Generated caption: {caption}")
 
-    # 使用 Gemini 生成 caption
-    encoded_image = base64.b64encode(image_data).decode("utf-8")
-    caption = model.generate_content(
-        [{"mime_type": "image/jpeg", "data": encoded_image}, "Caption this image."]
-    ).text
-
-    # 将 caption 写入数据库
-    conn = pymysql.connect(host=DB_HOST, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
-    with conn.cursor() as cursor:
-        cursor.execute("UPDATE captions SET caption=%s WHERE image_key=%s", (caption, key))
+        # 写入数据库
+        conn = pymysql.connect(
+            host=DB_HOST,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            connect_timeout=10
+        )
+        cursor = conn.cursor()
+        sql = "UPDATE captions SET caption = %s WHERE image_key = %s"
+        cursor.execute(sql, (caption, key))
         conn.commit()
-    conn.close()
+        conn.close()
 
-    return {"status": "success", "caption": caption}
+        return {
+            'statusCode': 200,
+            'body': f'Successfully captioned {key}'
+        }
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return {
+            'statusCode': 500,
+            'body': f'Failed to process {key}'
+        }
