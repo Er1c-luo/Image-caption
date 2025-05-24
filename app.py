@@ -40,7 +40,6 @@ DB_HOST = "captioning-db.cnwyqwsus01i.us-east-1.rds.amazonaws.com"
 DB_NAME = "image_caption_db"
 DB_USER = "admin"
 DB_PASSWORD = "labpassword"
-GOOGLE_API_KEY ="AIzaSyAkTgfRk6jsx6-7iakTs8xMyC1yeMueQJ4"
 
 # Allowed file types
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif"}
