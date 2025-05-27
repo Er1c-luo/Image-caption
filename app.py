@@ -36,7 +36,7 @@ app = Flask(__name__)
 S3_BUCKET = "myiamgebucket"
 S3_REGION = "us-east-1"
 # AWS S3 Configuration, REPLACE with your S3 bucket
-DB_HOST = "captioning-db.cnwyqwsus01i.us-east-1.rds.amazonaws.com"
+DB_HOST = "captioning-db.cgn20o9covfc.us-east-1.rds.amazonaws.com"
 DB_NAME = "image_caption_db"
 DB_USER = "admin"
 DB_PASSWORD = "labpassword"
