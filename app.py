@@ -33,7 +33,7 @@ import os
 app = Flask(__name__)
 
 # AWS S3 Configuration
-S3_BUCKET = "myiamgebucket"
+S3_BUCKET = "myimage-bk"
 S3_REGION = "us-east-1"
 # AWS S3 Configuration, REPLACE with your S3 bucket
 DB_HOST = "captioning-db.cgn20o9covfc.us-east-1.rds.amazonaws.com"
