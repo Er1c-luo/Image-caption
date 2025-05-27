@@ -11,8 +11,15 @@
         <div class="gallery">
             {% for image in images %}
                 <div class="image-container" style="display: flex; align-items: center; margin-bottom: 20px;">
-                    <img src="{{ image.url }}" alt="Uploaded Image" style="max-width: 200px; border-radius: 5px; margin-right: 20px;">
-                    <p><strong>Caption:</strong> {{ image.caption }}</p>
+                    {% if image.thumbnail_url %}
+                        <img src="{{ image.thumbnail_url }}" alt="Thumbnail" style="max-width: 150px; border-radius: 5px; margin-right: 20px;">
+                    {% else %}
+                        <p>[Thumbnail not available]</p>
+                    {% endif %}
+                    <div>
+                        <p><strong>Caption:</strong> {{ image.caption }}</p>
+                        <a href="{{ image.image_url }}" target="_blank">View Original Image</a>
+                    </div>
                 </div>
             {% endfor %}
         </div>
